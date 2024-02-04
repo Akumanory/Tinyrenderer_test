@@ -16,7 +16,7 @@ message(" ~ COMPILER_PATH => " ${CMAKE_CXX_COMPILER})
 message("--- CONFIGURATION INFO END ---")
 message("")
 
-add_subdirectory("TgaImage-lib")
+add_subdirectory("libs/TgaImage-lib")
 
 add_compile_options(
     # -Werror
@@ -41,11 +41,23 @@ if(NOT CMAKE_CXX_EXTENSIONS)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
-set(SOURCES
-    main.cpp)
+# set(HEADERS
+#     include/*.h)
+
+# set(SOURCES
+#     source/*.cpp
+#     main.cpp)
+
+# NOTE(akumanory): 
+# GLOB_RECURSE searces recursevly in given directory for the given pattern
+# can be used as an upgrade for 'set' in projects that uses 'include' and 'source' pattern
+
+file(GLOB_RECURSE SOURCES sources/*.cpp main.cpp)
+file(GLOB_RECURSE HEADERS includes/*.h)
 
 add_executable(${PROJECT_NAME}
                ${HEADERS}
                ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE TgaImage-lib)
+target_include_directories(${PROJECT_NAME} PUBLIC includes)
