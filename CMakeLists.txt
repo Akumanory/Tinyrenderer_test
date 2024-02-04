@@ -52,12 +52,12 @@ endif()
 # GLOB_RECURSE searces recursevly in given directory for the given pattern
 # can be used as an upgrade for 'set' in projects that uses 'include' and 'source' pattern
 
-file(GLOB_RECURSE SOURCES source/*.cpp main.cpp)
-file(GLOB_RECURSE HEADERS include/*.h)
+file(GLOB_RECURSE SOURCES sources/*.cpp main.cpp)
+file(GLOB_RECURSE HEADERS includes/*.h)
 
 add_executable(${PROJECT_NAME}
                ${HEADERS}
                ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE TgaImage-lib)
-target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_include_directories(${PROJECT_NAME} PUBLIC includes)

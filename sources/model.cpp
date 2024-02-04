@@ -8,7 +8,10 @@
 Model::Model(const char *filename) : verts_(), faces_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
-    if (in.fail()) return;
+    if (in.fail()) {
+        std::cerr << "can't open file: " << filename << std::endl;
+        return;
+    } 
     std::string line;
     while (!in.eof()) {
         std::getline(in, line);
