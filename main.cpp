@@ -15,13 +15,24 @@
 #define TRIANGLES_DRAWING 1
 #define LOGS
 
+enum class Colors : int32_t
+{
+    White,
+    Red,
+    Green,
+    Blue
+};
+
+using ColorMap = std::map<Colors, const TGAColor>;
+
+
 namespace cfg {
 // Screen size
 const int32_t width     = 200;
 const int32_t height    = 200;
 } // namespace cfg
 
-// Methods declarations 
+// Methods declarations
 void line(
     int32_t x_0, int32_t y_0,
     int32_t x_1, int32_t y_1,
@@ -32,10 +43,10 @@ void line(
     TGAImage &image, const TGAColor &color);
 
 void trianle_line_sweep(
-    Vec2i vertex_0, 
-    Vec2i vertex_1, 
+    Vec2i vertex_0,
+    Vec2i vertex_1,
     Vec2i vertex_2,
-    TGAImage &image, const std::map<std::string, const TGAColor> &color);
+    TGAImage &image, const ColorMap &color);
 
 // Start point
 
@@ -97,28 +108,28 @@ int main()
          image, blue);
 #endif // LINES_DRAWING
 #if TRIANGLES_DRAWING
-    std::array<Vec2i, 3> triangle_0 = {
+    const std::array<Vec2i, 3> triangle_0 = {
         Vec2i(10, 70), 
         Vec2i(50, 160), 
         Vec2i(70, 80)
     };
-    std::array<Vec2i, 3> triangle_1 = {
+    const std::array<Vec2i, 3> triangle_1 = {
         Vec2i(180, 50), 
         Vec2i(150, 1), 
         Vec2i(70, 180)
     };
     
-    std::array<Vec2i, 3> triangle_2 = {
+    const std::array<Vec2i, 3> triangle_2 = {
         Vec2i(180, 150), 
         Vec2i(120, 160), 
         Vec2i(130, 180)
     };
 
-    const std::map<std::string, const TGAColor> colors_map = {
-        { "white", white },
-        { "red",   red   }, 
-        { "green", green },
-        { "blue",  blue  }
+    const ColorMap colors_map = {
+        { Colors::White, white },
+        { Colors::Red,   red   }, 
+        { Colors::Green, green },
+        { Colors::Blue,  blue  }
     };
 
     trianle_line_sweep(
@@ -159,7 +170,7 @@ void trianle_line_sweep(
     Vec2i vertex_0, 
     Vec2i vertex_1, 
     Vec2i vertex_2,
-    TGAImage &image, const std::map<std::string, const TGAColor> &color
+    TGAImage &image, const ColorMap &color
 ) {
 #ifdef LOGS
     std::cout << "Vertxes before sort by y" << "\n";
@@ -168,13 +179,24 @@ void trianle_line_sweep(
     std::cout << "vertex_2 x = " << vertex_2.x << " y = " << vertex_2.y << "\n";
 #endif // LOGS
 
-    if (vertex_0.y > vertex_1.y) {
+    // NOTE(akumanory): Not good triangles
+    if (vertex_0.y == vertex_1.y &&
+        vertex_0.y == vertex_2.y)
+    {
+        std::cout << "Bad triangles cords" << std::endl;
+        return;
+    }
+
+    if (vertex_0.y > vertex_1.y) 
+    {
         std::swap(vertex_0, vertex_1);
     }
-    if (vertex_0.y > vertex_2.y) {
+    if (vertex_0.y > vertex_2.y) 
+    {
         std::swap(vertex_0, vertex_2);
     }
-    if (vertex_1.y > vertex_2.y) {
+    if (vertex_1.y > vertex_2.y) 
+    {
         std::swap(vertex_1, vertex_2);
     }
 
@@ -185,7 +207,51 @@ void trianle_line_sweep(
     std::cout << "vertex_2 x = " << vertex_2.x << " y = " << vertex_2.y << "\n";
 #endif // LOGS 
 
-    int total_height = vertex_2.y - vertex_0.y;
+    int32_t total_height = vertex_2.y - vertex_0.y;
+    for ( int32_t i = 0; i < total_height; i++ ) 
+    {
+        bool second_half = 
+            i > vertex_1.y - vertex_0.y
+            || vertex_1.y == vertex_0.y;
+
+        int32_t segment_height = 
+            second_half 
+            ? vertex_2.y - vertex_1.y 
+            : vertex_1.y - vertex_0.y;
+
+        float alpha = 
+            static_cast<float>( i )
+            / static_cast<float>( total_height );
+
+        float beta =  
+            static_cast<float>( i - ( second_half ? vertex_1.y - vertex_0.y : 0 ) )
+            / static_cast<float>( segment_height ); 
+
+        Vec2i part_A = 
+            vertex_0 + ( vertex_2 - vertex_0 ) * alpha;
+
+        Vec2i part_B = 
+            second_half 
+            ? vertex_1 + ( vertex_2 - vertex_1 ) * beta 
+            : vertex_0 + ( vertex_1 - vertex_0 ) * beta;
+
+        if ( part_A.x > part_B.x ) 
+        {
+            std::swap( part_A, part_B );        
+        }
+
+        for (int32_t j = part_A.x; j <= part_B.x; j++) 
+        {
+            image.set( j, vertex_0.y + i, 
+                      second_half 
+                      ? color.at( Colors::Green ) 
+                      : color.at( Colors::White ) );    
+        }
+    }
+
+
+
+#ifdef OLD
     for (int y = vertex_0.y; y <= vertex_1.y; y++) {
         int segment_height = vertex_1.y - vertex_0.y + 1;
         float alpha = static_cast<float>(y - vertex_0.y) / static_cast<float>(total_height);
@@ -222,7 +288,7 @@ void trianle_line_sweep(
         // image.set(part_A.x, y, color.at("red"));
         // image.set(part_B.x, y, color.at("green"));
     }
-    
+#endif // OLD 
 
     // line(vertex_0, vertex_1, image, color.at("green"));
     // line(vertex_1, vertex_2, image, color.at("white"));
