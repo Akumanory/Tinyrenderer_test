@@ -1,18 +1,15 @@
-#include <array>
-#include <cstdint>
-#include <cstdlib>
 #include <iostream>
 #include <map>
-#include <tga_image.h>
-#include <tuple>
-#include <utility>
+
 #include <geometry.h>
 #include <model.h>
+#include <tga_image.h>
 
 // Defines
 #define MODEL_DRAWING 0
 #define LINES_DRAWING 0
-#define TRIANGLES_DRAWING 1
+#define TRIANGLES_DRAWING 0
+#define TRIANGLES_BARYCENTRIC_DRAWING 1
 #define LOGS
 
 enum class Colors : int32_t
@@ -26,7 +23,8 @@ enum class Colors : int32_t
 using ColorMap = std::map<Colors, const TGAColor>;
 
 
-namespace cfg {
+namespace cfg 
+{
 // Screen size
 const int32_t width     = 200;
 const int32_t height    = 200;
@@ -42,11 +40,21 @@ void line(
     Vec2i point_0, Vec2i point_1,
     TGAImage &image, const TGAColor &color);
 
+// NOTE(akumanory): line sweeping method for triangle rasterization
 void trianle_line_sweep(
     Vec2i vertex_0,
     Vec2i vertex_1,
     Vec2i vertex_2,
     TGAImage &image, const ColorMap &color);
+
+namespace barycentric 
+{
+Vec3f barycentric( Vec2i* pts, Vec2i P );
+
+void triangle_barycentric( Vec2i *pts, TGAImage &image, TGAColor color );
+
+} // namespace barycentric
+
 
 // Start point
 
@@ -82,7 +90,7 @@ int main()
         for (size_t j = 0; j < 3; j++) {
             Vec3f vert_0 = model.vert(face[j]);
             Vec3f vert_1 = model.vert(face[(j + 1) % 3]);
-            
+
             int x_0 = static_cast<int>((vert_0.x + 1.) * cfg::width  / cfg::half_coef);
             int y_0 = static_cast<int>((vert_0.y + 1.) * cfg::height / cfg::half_coef);
             int x_1 = static_cast<int>((vert_1.x + 1.) * cfg::width  / cfg::half_coef);
@@ -158,9 +166,12 @@ int main()
         colors_map   
     );
 #endif // TRIANGLES_DRAWING
+#if TRIANGLES_BARYCENTRIC_DRAWING
 
-	image.flip_vertically(); // NOTE(akumanory): i want to have the origin at the left bottom corner of the image
-	image.write_tga_file("output.tga");
+#endif // TRIANGLES_BARYCENTRIC_DRAWING
+
+    image.flip_vertically(); // NOTE(akumanory): i want to have the origin at the left bottom corner of the image
+    image.write_tga_file("output.tga");
 
     return 0;
 }
@@ -342,3 +353,28 @@ void line(
         }
     }
 }
+
+namespace barycentric 
+{
+Vec3f barycentric( Vec2i* pts, Vec2i P )
+{
+    // Barycentric_vec(b_vec) is in point verctor notation
+    // b_vec_x = ( Cx - Ax; Bx - Ax; Ax - Px);
+    // b_vec_y = ( Cy - Ay; By - Ay; Ay - Py);
+    // b_vec = b_vec_x (cross_product) b_vec_y;
+    // so by this we get for of vector that is looks like this [u, v, 1]
+    // it may be not normilized and look like something like this [ 4u, 4v, 4]
+    Vec3f barycentric_vec =
+        Vec3f( pts[2].x - pts[0].x, 
+               pts[1][0] - pts[0][0],
+               pts[0][0] - P[0]);
+
+
+
+    return Vec3f();
+}
+
+void triangle_barycentric( Vec2i *pts, TGAImage &image, TGAColor color );
+
+} // namespace barycentric
+
